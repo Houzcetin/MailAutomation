@@ -3,6 +3,8 @@
 @{
     ViewData["Title"] = "Mail Detayı";
     var e = Model.Email;
+    var otika = "/otika-bootstrap-admin-template/assets";
+    var replySent = e.Reply?.Status == ReplyStatus.Sent;
 }
 
 <section class="section">
@@ -24,6 +26,66 @@
                     <hr />
                     <h6>İçerik</h6>
                     <div style="white-space:pre-wrap">@e.Body</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h4>Yanıt</h4>
+                    <div class="card-header-action">
+                        @if (replySent)
+                        {
+                            <span class="badge badge-success">Gönderildi</span>
+                        }
+                        else
+                        {
+                            <span id="replyBadge" class="badge badge-secondary" style="@(e.Reply is null ? "display:none" : "")">Taslak</span>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (replySent)
+                    {
+                        <div class="alert alert-success">
+                            Yanıt @(e.Reply!.SentDate?.ToString("dd.MM.yyyy HH:mm")) tarihinde
+                            <strong>@e.SenderEmail</strong> adresine gönderildi.
+                        </div>
+                        <div style="white-space:pre-wrap">@e.Reply.Body</div>
+                    }
+                    else
+                    {
+                        @if (!string.IsNullOrEmpty(e.Reply?.LastSendError))
+                        {
+                            <div class="alert alert-danger alert-dismissible show fade">
+                                <div class="alert-body">
+                                    <button class="close" data-dismiss="alert"><span>&times;</span></button>
+                                    Son gönderim hatası: @e.Reply.LastSendError
+                                </div>
+                            </div>
+                        }
+                        <div class="form-group mb-2">
+                            <textarea id="replyBody" class="form-control" rows="18"
+                                      style="min-height:420px;resize:vertical;font-size:0.95rem;line-height:1.6;"
+                                      placeholder="AI taslağı için &quot;Yanıt Oluştur&quot;a basın veya yanıtınızı yazın...">@(e.Reply?.Body)</textarea>
+                        </div>
+                        <div class="d-flex align-items-center flex-wrap">
+                            <button type="button" id="btnGenerate" class="btn btn-primary mr-2 mb-2">
+                                <i data-feather="zap"></i> Yanıt Oluştur
+                            </button>
+                            <button type="button" id="btnSaveDraft" class="btn btn-info mr-2 mb-2">
+                                <i data-feather="save"></i> Taslağı Kaydet
+                            </button>
+                            <button type="button" id="btnSend" class="btn btn-success mr-2 mb-2">
+                                <i data-feather="send"></i> Gönder
+                            </button>
+                            <small id="replyStatusLine" class="text-muted mb-2">
+                                @if (e.Reply?.UpdatedDate is not null)
+                                {
+                                    @:Son kayıt: @e.Reply.UpdatedDate.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                                }
+                            </small>
+                        </div>
+                    }
                 </div>
             </div>
 
@@ -91,3 +153,131 @@
         </div>
     </div>
 </section>
+
+@section Scripts {
+@if (!replySent)
+{
+<link rel="stylesheet" href="@otika/bundles/izitoast/css/iziToast.min.css">
+<script src="@otika/bundles/izitoast/js/iziToast.min.js"></script>
+<script src="@otika/bundles/sweetalert/sweetalert.min.js"></script>
+<script>
+    (function () {
+        const emailId = @e.Id;
+        const textarea = document.getElementById('replyBody');
+        const btnGenerate = document.getElementById('btnGenerate');
+        const btnSaveDraft = document.getElementById('btnSaveDraft');
+        const btnSend = document.getElementById('btnSend');
+        const badge = document.getElementById('replyBadge');
+        const statusLine = document.getElementById('replyStatusLine');
+
+        // The exact text of the last AI generation; while the textarea still matches it,
+        // the draft is saved with isAiGenerated=true.
+        let lastGenerated = @Json.Serialize(e.Reply?.IsAiGenerated == true ? e.Reply.Body : null);
+        let lastRawResponse = null;
+
+        function toast(type, message) {
+            iziToast[type]({ title: type === 'error' ? 'Hata' : 'Bilgi', message: message, position: 'topRight' });
+        }
+
+        function setBusy(activeBtn, busy) {
+            [btnGenerate, btnSaveDraft, btnSend].forEach(b => b.disabled = busy);
+            activeBtn.classList.toggle('btn-progress', busy);
+        }
+
+        function draftPayload() {
+            const body = textarea.value;
+            const isAi = lastGenerated !== null && body === lastGenerated;
+            return { replyBody: body, isAiGenerated: isAi, aiRawResponse: isAi ? lastRawResponse : null };
+        }
+
+        function markSaved() {
+            badge.style.display = '';
+            statusLine.textContent = 'Son kayıt: ' + new Date().toLocaleString('tr-TR', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        async function readError(res) {
+            const data = await res.json().catch(() => ({}));
+            return data.error || 'İşlem başarısız oldu. Lütfen tekrar deneyin.';
+        }
+
+        btnGenerate.addEventListener('click', async function () {
+            if (textarea.value.trim()) {
+                const overwrite = await swal({
+                    title: 'Üzerine yazılsın mı?',
+                    text: 'Mevcut yanıt metni, yeni oluşturulacak AI taslağıyla değiştirilecek.',
+                    icon: 'warning',
+                    buttons: ['Vazgeç', 'Üzerine Yaz'],
+                    dangerMode: true
+                });
+                if (!overwrite) return;
+            }
+
+            setBusy(btnGenerate, true);
+            try {
+                const res = await fetch(`/api/emails/${emailId}/reply/generate`, { method: 'POST' });
+                if (!res.ok) { toast('error', await readError(res)); return; }
+                const data = await res.json();
+                textarea.value = data.replyBody;
+                lastGenerated = data.replyBody;
+                lastRawResponse = data.rawResponse || null;
+                toast('success', 'Yanıt taslağı oluşturuldu. Göndermeden önce kontrol edin.');
+            } catch {
+                toast('error', 'Sunucuya ulaşılamadı.');
+            } finally {
+                setBusy(btnGenerate, false);
+            }
+        });
+
+        btnSaveDraft.addEventListener('click', async function () {
+            if (!textarea.value.trim()) { toast('error', 'Yanıt metni boş olamaz.'); return; }
+
+            setBusy(btnSaveDraft, true);
+            try {
+                const res = await fetch(`/api/emails/${emailId}/reply`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(draftPayload())
+                });
+                if (!res.ok) { toast('error', await readError(res)); return; }
+                markSaved();
+                toast('success', 'Taslak kaydedildi.');
+            } catch {
+                toast('error', 'Sunucuya ulaşılamadı.');
+            } finally {
+                setBusy(btnSaveDraft, false);
+            }
+        });
+
+        btnSend.addEventListener('click', async function () {
+            if (!textarea.value.trim()) { toast('error', 'Yanıt metni boş olamaz.'); return; }
+
+            const confirmed = await swal({
+                title: 'Yanıt gönderilsin mi?',
+                text: '@e.SenderEmail adresine gönderilecek.',
+                icon: 'warning',
+                buttons: ['Vazgeç', 'Gönder']
+            });
+            if (!confirmed) return;
+
+            setBusy(btnSend, true);
+            try {
+                const res = await fetch(`/api/emails/${emailId}/reply/send`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(draftPayload())
+                });
+                if (!res.ok) { toast('error', await readError(res)); setBusy(btnSend, false); return; }
+                toast('success', 'Yanıt gönderildi.');
+                // Reload so the server renders the sent-state panel.
+                setTimeout(() => location.reload(), 800);
+            } catch {
+                toast('error', 'Sunucuya ulaşılamadı.');
+                setBusy(btnSend, false);
+            }
+        });
+    })();
+</script>
+}
+}

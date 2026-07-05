@@ -24,7 +24,9 @@ public class EmailsModel : PageModel
     [BindProperty(SupportsGet = true)] public DateTime? DateFrom { get; set; }
     [BindProperty(SupportsGet = true)] public DateTime? DateTo { get; set; }
     [BindProperty(SupportsGet = true)] public string? Search { get; set; }
-    [BindProperty(SupportsGet = true, Name = "page")] public int PageNumber { get; set; } = 1;
+    // Bound from "p" — NOT "page": in Razor Pages "page" is a reserved routing token and is
+    // swallowed before it reaches model binding, so ?page=2 never changes the page number.
+    [BindProperty(SupportsGet = true, Name = "p")] public int PageNumber { get; set; } = 1;
 
     public int PageSize { get; } = 20;
     public int TotalCount { get; private set; }
@@ -67,7 +69,7 @@ public class EmailsModel : PageModel
     /// <summary>Builds a query string preserving current filters, overriding the page number.</summary>
     public string PageLink(int page)
     {
-        var q = new List<string> { $"page={page}" };
+        var q = new List<string> { $"p={page}" };
         if (MainCategory is not null) q.Add($"mainCategory={MainCategory}");
         if (Priority is not null) q.Add($"priority={Priority}");
         if (Sentiment is not null) q.Add($"sentiment={Sentiment}");

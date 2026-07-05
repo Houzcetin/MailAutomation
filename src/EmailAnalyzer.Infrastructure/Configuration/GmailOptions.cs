@@ -26,4 +26,13 @@ public class GmailOptions
     /// unseen backlog (and its AI cost) in one go — the newest N are taken each cycle.
     /// </summary>
     public int MaxEmailsPerCycle { get; set; } = 20;
+
+    /// <summary>SMTP host for sending replies; same credentials as IMAP.</summary>
+    public string SmtpHost { get; set; } = "smtp.gmail.com";
+
+    /// <summary>587 = STARTTLS (465/SslOnConnect also works with Gmail).</summary>
+    public int SmtpPort { get; set; } = 587;
+
+    /// <summary>Display name shown in the From header of outgoing replies.</summary>
+    public string SenderDisplayName { get; set; } = string.Empty;
 }

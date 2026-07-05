@@ -53,6 +53,9 @@ public class EmailMessage
     /// <summary>UTC timestamp of when the record was created.</summary>
     public DateTime CreatedDate { get; set; }
 
+    /// <summary>The (single) reply drafted/sent for this email; null until one is saved.</summary>
+    public EmailReply? Reply { get; set; }
+
     /// <summary>
     /// Builds an entity from the raw mail data and its AI analysis result. Shared by the
     /// polling worker and the manual /analyze endpoint so the mapping lives in one place.

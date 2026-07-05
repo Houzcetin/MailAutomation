@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.Configure<OpenAiOptions>(configuration.GetSection(OpenAiOptions.SectionName));
         services.Configure<AnalysisOptions>(configuration.GetSection(AnalysisOptions.SectionName));
         services.Configure<GmailOptions>(configuration.GetSection(GmailOptions.SectionName));
+        services.Configure<ReplyOptions>(configuration.GetSection(ReplyOptions.SectionName));
 
         // OpenAI typed HttpClient — base URL + Bearer auth from configuration.
         services.AddHttpClient<OpenAiClient>((provider, client) =>
@@ -48,6 +49,8 @@ public static class DependencyInjection
 
         services.AddScoped<IEmailAnalysisService, EmailAnalysisService>();
         services.AddScoped<IEmailFetchService, MailKitEmailFetchService>();
+        services.AddScoped<IReplyGenerationService, ReplyGenerationService>();
+        services.AddScoped<IEmailReplySender, MailKitEmailReplySender>();
 
         return services;
     }

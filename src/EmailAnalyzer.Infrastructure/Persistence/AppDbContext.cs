@@ -11,6 +11,8 @@ public class AppDbContext : DbContext
 
     public DbSet<EmailMessage> EmailMessages => Set<EmailMessage>();
 
+    public DbSet<EmailReply> EmailReplies => Set<EmailReply>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

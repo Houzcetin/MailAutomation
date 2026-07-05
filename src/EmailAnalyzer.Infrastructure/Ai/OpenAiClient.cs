@@ -40,16 +40,28 @@ public class OpenAiClient
     /// (choices[0].message.content). Throws on non-retryable errors or after retries
     /// are exhausted.
     /// </summary>
+    public Task<string> CompleteJsonAsync(
+        string systemPrompt,
+        string userPrompt,
+        CancellationToken cancellationToken)
+        => CompleteJsonAsync(systemPrompt, userPrompt, temperature: 0, _options.MaxTokens, cancellationToken);
+
+    /// <summary>
+    /// Variant with explicit sampling parameters. Classification uses temperature 0;
+    /// reply drafting uses a higher temperature for natural prose.
+    /// </summary>
     public async Task<string> CompleteJsonAsync(
         string systemPrompt,
         string userPrompt,
+        double temperature,
+        int maxTokens,
         CancellationToken cancellationToken)
     {
         var payload = new
         {
             model = _options.Model,
-            temperature = 0,
-            max_tokens = _options.MaxTokens,
+            temperature,
+            max_tokens = maxTokens,
             response_format = new { type = "json_object" },
             messages = new object[]
             {
