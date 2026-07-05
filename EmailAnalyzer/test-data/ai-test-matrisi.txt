@@ -1,0 +1,130 @@
+### AI KALİTE TEST MATRİSİ
+### Her mail bloğu "---" ile ayrılır. Beklenen değerler BEKLENEN_* satırlarında.
+### BEKLENEN_KATEGORI: tek değer (ERP/MuhasebeFinans/EDonusum/CRM/IK/RaporlamaAnalitik/EgitimDanismanlik/Diger)
+###   Birden çok kabul edilebilir kategori varsa | ile ayır (ör: EDonusum|MuhasebeFinans)
+### BEKLENEN_ONCELIK: Low|Medium|High|Critical (birden çok kabul edilebilir olabilir)
+### BEKLENEN_REVIEW: true / false / (boş = kontrol etme)
+### Bu dosya Test-AiQuality.ps1 ile çalıştırılır; gerçek AI sonucu beklenenle karşılaştırılır.
+---
+KONU: E-fatura kesemiyorum, GİB mali mühür hatası veriyor
+İÇERİK: Merhaba, e-fatura keserken "mali mühür sertifikası doğrulanamadı" hatası alıyorum. GİB'e hiç fatura gönderemiyorum, 30 tane bekleyen fatura var ve bazıları bugün son gün. Acil yardım lazım.
+BEKLENEN_KATEGORI: EDonusum
+BEKLENEN_ONCELIK: High|Critical
+---
+KONU: Cari hesap bakiyesi banka ekstresiyle tutmuyor
+İÇERİK: 320 Satıcılar hesabındaki bakiye ile banka ekstresi arasında 25.000 TL fark var. Tahsilatlar cari ekstrede görünmüyor, borç-alacak dengesi bozuk. Mali müşavire rapor göndereceğiz, kontrol eder misiniz?
+BEKLENEN_KATEGORI: MuhasebeFinans
+BEKLENEN_ONCELIK: Medium|High
+---
+KONU: Üretim planlamada iş emirleri termin tarihine göre sıralanmıyor
+İÇERİK: ERP üretim modülünde iş emirleri öncelik ve termin tarihine göre dizilmiyor. Planlama ekibi elle düzeltiyor, hat verimliliği düştü. Ayrıca satın alma talepleri eksik yarı mamul oluşturuyor.
+BEKLENEN_KATEGORI: ERP
+BEKLENEN_ONCELIK: Medium|High
+---
+KONU: Yeni müşteri şikayeti CRM'e ticket olarak düşmedi
+İÇERİK: Web formundan gelen müşteri şikayeti CRM pipeline'a kayıt olmamış. Müşteri "dönüş yapılmadı" diye çok kızgın, satış sonrası ekibi mağdur. Form entegrasyonunu kontrol edin.
+BEKLENEN_KATEGORI: CRM
+BEKLENEN_ONCELIK: High
+---
+KONU: Haziran bordrosunda fazla mesai yanlış hesaplandı
+İÇERİK: Bazı personelin fazla mesai tutarı düşük çıktı. Puantaj saatleri doğru ama bordro çıktısında oran farklı. Resmi tatil çalışması olanlarda sorun var, çalışanlardan itiraz geliyor.
+BEKLENEN_KATEGORI: IK
+BEKLENEN_ONCELIK: Medium|High
+---
+KONU: Satış performans dashboard'unda KPI'lar güncellenmiyor
+İÇERİK: Yönetim ekranındaki satış KPI grafikleri dün geceden beri güncellenmiyor. Aylık ciro, hedef gerçekleşme ve bölge bazlı analiz eski veriyi gösteriyor. Yönetim toplantısı için rapor lazım.
+BEKLENEN_KATEGORI: RaporlamaAnalitik
+BEKLENEN_ONCELIK: Medium|High
+---
+KONU: Canlı ortama geçiş öncesi kullanıcı eğitimi talebi
+İÇERİK: ERP kurulumumuz bitmek üzere, kullanıcıların stok ve muhasebe süreçlerinde eğitime ihtiyacı var. İki günlük online eğitim planlayabilir miyiz? Sonrasında kısa bir kullanım dokümanı da rica ederiz.
+BEKLENEN_KATEGORI: EgitimDanismanlik
+BEKLENEN_ONCELIK: Medium
+---
+KONU: Şirketiniz için 10.000 hazır B2B müşteri datası
+İÇERİK: Türkiye geneli güncel firma yetkilisi veritabanımızla satışlarınızı artırın. İlk 500 kayıt ücretsiz demo. Kampanya bu hafta geçerli, dönüş yapmanız yeterli.
+BEKLENEN_KATEGORI: Diger
+BEKLENEN_ONCELIK: Low
+---
+KONU: Ödeme anlaşmazlığı ve sözleşme ihlali bildirimi
+İÇERİK: Müvekkilimiz adına yazıyoruz. Taahhüt edilen müdahale sürelerine uyulmadığı halde bakım bedeli faturalandırılmış. İlgili e-arşiv faturasının hizmet detayı hatalı. Yazılı açıklama yapılmazsa hukuki süreç başlatılacaktır.
+BEKLENEN_KATEGORI: MuhasebeFinans|CRM
+BEKLENEN_ONCELIK: High|Critical
+BEKLENEN_REVIEW: true
+---
+KONU: sistem açılmıyor
+İÇERİK: hiçbir şey çalışmıyor acil
+BEKLENEN_KATEGORI: ERP|Diger
+BEKLENEN_ONCELIK: High|Critical
+---
+KONU: e-defter beratı sonrası mizan tutmuyor, veri kaybı olabilir
+İÇERİK: E-defter beratlarını yükledikten sonra mizan raporunda bazı hesapların borç-alacak toplamı değişti. GİB tarafı başarılı ama sistemdeki mali rapor farklı. Muhasebe ekibi veri kaybından endişeli.
+BEKLENEN_KATEGORI: MuhasebeFinans|EDonusum
+BEKLENEN_ONCELIK: High|Critical
+---
+KONU: Teklif onaylandı ama satış fırsatına dönüşmüyor
+İÇERİK: CRM'de teklif "approved" görünüyor fakat opportunity kaydı oluşmuyor. Bu workflow önceden çalışıyordu. Satış ekibi raporlarında teklifler kayıp, aylık hedef takibi bozuldu.
+BEKLENEN_KATEGORI: CRM
+BEKLENEN_ONCELIK: Medium|High
+---
+KONU: Depo stok sayımı sistemdeki miktarla uyuşmuyor
+İÇERİK: Fiziksel sayımda 200 kalem üründe fark çıktı. ERP stok modülü negatif stok gösteriyor, sevkiyatlar durdu. Depo ekibi manuel düzeltme yapamıyor.
+BEKLENEN_KATEGORI: ERP
+BEKLENEN_ONCELIK: High|Critical
+---
+KONU: İşe yeni başlayan personel için özlük ve SGK girişi
+İÇERİK: Yeni personelin özlük bilgilerini giriyoruz, SGK işe giriş tarihi ve deneme süresi bordroya otomatik yansıyor mu? İzin hakkı başlangıç tarihine göre mi hesaplanıyor? Kısa bir yönlendirme rica ederim.
+BEKLENEN_KATEGORI: IK
+BEKLENEN_ONCELIK: Low|Medium
+---
+KONU: Logolu ajanda ve kalem kampanyası
+İÇERİK: Yeni yıl için kurumsal logolu ajanda, kalem ve kupa üretimi yapıyoruz. Minimum sipariş 250 adet, tasarım ücretsiz. Katalog gönderelim mi?
+BEKLENEN_KATEGORI: Diger
+BEKLENEN_ONCELIK: Low
+---
+KONU: e-arşiv faturası iptal edilemiyor, müşteri iade istiyor
+İÇERİK: Yanlış kesilen bir e-arşiv faturasını iptal etmeye çalışıyoruz ama sistem "iptal süresi doldu" diyor. Müşteri iade talep ediyor ve muhasebe kaydı da düzeltilmeli. İki taraflı sorun var.
+BEKLENEN_KATEGORI: EDonusum|MuhasebeFinans
+BEKLENEN_ONCELIK: Medium|High
+---
+KONU: Bütçe gerçekleşen raporunda gider kalemleri eksik
+İÇERİK: Aylık bütçe-gerçekleşen karşılaştırma raporunda bazı gider kalemleri hiç görünmüyor. Muhasebe fişleri onaylı ama rapora dahil olmuyor. Yönetime sunum yapacağız.
+BEKLENEN_KATEGORI: MuhasebeFinans|RaporlamaAnalitik
+BEKLENEN_ONCELIK: Medium|High
+---
+KONU: Merhaba
+İÇERİK: Bilgi almak istiyorum.
+BEKLENEN_KATEGORI: Diger
+BEKLENEN_ONCELIK: Low|Medium
+---
+KONU: Kampanya yönetimi modülünde müşteri segmenti oluşturamıyorum
+İÇERİK: CRM kampanya modülünde hedef müşteri segmenti tanımlarken filtreler çalışmıyor. Yaş, bölge ve satın alma geçmişine göre liste oluşturamıyorum. Pazarlama kampanyası gecikti.
+BEKLENEN_KATEGORI: CRM
+BEKLENEN_ONCELIK: Medium
+---
+KONU: ACİL - Muhasebe kapanışı yapılamıyor tüm ekip bekliyor
+İÇERİK: Ay sonu kapanışı sırasında sistem donuyor, dönem hareketleri kontrol ekranında kalıyor. 15 kişilik muhasebe ekibi çalışamıyor, bugün mali müşavire dosya gitmeli. Lütfen hemen bakın!!!
+BEKLENEN_KATEGORI: MuhasebeFinans
+BEKLENEN_ONCELIK: Critical
+BEKLENEN_REVIEW: true
+---
+KONU: Yıllık izin bakiyesi ekranda yanlış görünüyor
+İÇERİK: Personel self servis ekranında yıllık izin bakiyeleri hatalı. Kullanılan izinler düşülmemiş gibi görünüyor, çalışanlar fazla izin görüyor. Bordro ve puantaj tarafını da etkiler mi?
+BEKLENEN_KATEGORI: IK
+BEKLENEN_ONCELIK: Medium
+---
+KONU: Stok raporu Excel'e aktarılmıyor
+İÇERİK: Raporlama modülünde stok durum raporunu Excel'e export etmeye çalışınca hata alıyorum. PDF çalışıyor ama Excel butonu tepki vermiyor. Aylık envanter raporu için gerekli.
+BEKLENEN_KATEGORI: RaporlamaAnalitik|ERP
+BEKLENEN_ONCELIK: Low|Medium
+---
+KONU: %70 indirim son gün! Hemen tıkla
+İÇERİK: Sepetteki ürünlerde bugüne özel dev indirim! Kaçırma, stoklar tükenmeden alışverişini tamamla. Ücretsiz kargo fırsatı da var.
+BEKLENEN_KATEGORI: Diger
+BEKLENEN_ONCELIK: Low
+---
+KONU: ERP ve muhasebe entegrasyonu için danışmanlık randevusu
+İÇERİK: Mevcut ERP sistemimizi muhasebe yazılımıyla entegre etmek istiyoruz. Süreç danışmanlığı ve fizibilite için bir toplantı ayarlayabilir miyiz? Acil değil, önümüzdeki hafta uygun.
+BEKLENEN_KATEGORI: EgitimDanismanlik|ERP
+BEKLENEN_ONCELIK: Low|Medium
+---

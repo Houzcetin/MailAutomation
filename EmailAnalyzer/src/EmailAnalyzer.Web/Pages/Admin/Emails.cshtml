@@ -1,0 +1,142 @@
+@page "/admin/emails"
+@model EmailAnalyzer.Web.Pages.Admin.EmailsModel
+@{
+    ViewData["Title"] = "Mailler";
+}
+
+<section class="section">
+    <div class="section-header">
+        <h1>Mailler</h1>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h4>Filtre</h4></div>
+        <div class="card-body">
+            <form method="get" class="row">
+                <div class="form-group col-md-3">
+                    <label>Kategori</label>
+                    <select name="mainCategory" class="form-control">
+                        <option value="">Tümü</option>
+                        @foreach (var c in Enum.GetValues<MainCategory>())
+                        {
+                            <option value="@c" selected="@(Model.MainCategory == c)">@DisplayNames.For(c)</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Öncelik</label>
+                    <select name="priority" class="form-control">
+                        <option value="">Tümü</option>
+                        @foreach (var p in Enum.GetValues<Priority>())
+                        {
+                            <option value="@p" selected="@(Model.Priority == p)">@DisplayNames.For(p)</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Duygu</label>
+                    <select name="sentiment" class="form-control">
+                        <option value="">Tümü</option>
+                        @foreach (var s in Enum.GetValues<Sentiment>())
+                        {
+                            <option value="@s" selected="@(Model.Sentiment == s)">@DisplayNames.For(s)</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>İnceleme</label>
+                    <select name="requiresHumanReview" class="form-control">
+                        <option value="">Tümü</option>
+                        <option value="true" selected="@(Model.RequiresHumanReview == true)">Bekleyen</option>
+                        <option value="false" selected="@(Model.RequiresHumanReview == false)">Tamamlanan</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-3">
+                    <label>Arama (konu / gönderen / özet)</label>
+                    <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="ör: KDV">
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Başlangıç</label>
+                    <input type="date" name="dateFrom" value="@(Model.DateFrom?.ToString("yyyy-MM-dd"))" class="form-control">
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Bitiş</label>
+                    <input type="date" name="dateTo" value="@(Model.DateTo?.ToString("yyyy-MM-dd"))" class="form-control">
+                </div>
+                <div class="form-group col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary mr-2">Filtrele</button>
+                    <a href="/admin/emails" class="btn btn-secondary">Temizle</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h4>Sonuçlar (@Model.TotalCount)</h4>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Gönderen</th>
+                            <th>Konu</th>
+                            <th>Kategori</th>
+                            <th>Öncelik</th>
+                            <th>Duygu</th>
+                            <th>Tarih</th>
+                            <th>İnceleme</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Items.Any())
+                        {
+                            <tr><td colspan="7" class="text-center py-4">Kayıt bulunamadı.</td></tr>
+                        }
+                        @foreach (var e in Model.Items)
+                        {
+                            <tr style="cursor:pointer" onclick="location.href='/admin/emails/@e.Id'">
+                                <td>
+                                    <div>@(string.IsNullOrWhiteSpace(e.SenderName) ? e.SenderEmail : e.SenderName)</div>
+                                    <div class="text-muted small">@e.SenderEmail</div>
+                                </td>
+                                <td>@e.Subject</td>
+                                <td>@e.MainCategoryDisplay</td>
+                                <td><span class="badge @DisplayNames.BadgeClass(e.Priority)">@e.PriorityDisplay</span></td>
+                                <td>@e.SentimentDisplay</td>
+                                <td>@e.ReceivedDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>
+                                    @if (e.RequiresHumanReview)
+                                    {
+                                        <span class="badge badge-warning">Bekliyor</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-success">Tamam</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @if (Model.TotalPages > 1)
+        {
+            <div class="card-footer text-right">
+                <nav class="d-inline-block">
+                    <ul class="pagination mb-0">
+                        <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
+                            <a class="page-link" href="@Model.PageLink(Model.PageNumber - 1)">Önceki</a>
+                        </li>
+                        <li class="page-item disabled"><span class="page-link">@Model.PageNumber / @Model.TotalPages</span></li>
+                        <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link" href="@Model.PageLink(Model.PageNumber + 1)">Sonraki</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</section>

@@ -1,0 +1,16 @@
+# Build output
+bin/
+obj/
+
+# .NET
+*.user
+*.suo
+.vs/
+
+# Secrets — never commit real keys. Use dotnet user-secrets or environment variables.
+appsettings.*.local.json
+secrets.json
+
+# Serilog / logs
+logs/
+*.log

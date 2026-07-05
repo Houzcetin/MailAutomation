@@ -1,0 +1,51 @@
+@host = http://localhost:5247
+
+### Manuel analiz (kaydetmeden) — AI sonucunu döner
+POST {{host}}/api/emails/analyze
+Content-Type: application/json
+
+{
+  "subject": "E-fatura kesemiyorum, cari hesap bakiyesi hatalı",
+  "body": "Bugün müşterime e-fatura keserken hata alıyorum ve GİB'e gönderilemiyor. Ay sonu kapanışı için acil.",
+  "senderEmail": "test@firma.com",
+  "senderName": "Test Kullanıcı"
+}
+
+### Manuel analiz + veritabanına kaydet (save=true)
+POST {{host}}/api/emails/analyze?save=true
+Content-Type: application/json
+
+{
+  "subject": "Bordro hesaplamasında fazla mesai yanlış",
+  "body": "Haziran bordrosunda bazı çalışanların fazla mesai tutarı düşük hesaplanmış. Kontrol eder misiniz?",
+  "senderEmail": "ik@firma.com",
+  "senderName": "İK Departmanı"
+}
+
+### Mail listesi (sayfalı)
+GET {{host}}/api/emails?page=1&pageSize=10
+
+### Mail listesi — kategori filtresi
+GET {{host}}/api/emails?mainCategory=MuhasebeFinans
+
+### Mail listesi — arama
+GET {{host}}/api/emails?search=KDV
+
+### Mail listesi — çoklu filtre
+GET {{host}}/api/emails?priority=Critical&requiresHumanReview=true&pageSize=5
+
+### Tek mail detayı
+GET {{host}}/api/emails/1
+
+### İnsan düzeltmesi (review) — kategori/öncelik güncelle, review flag'i kaldır
+PUT {{host}}/api/emails/1/review
+Content-Type: application/json
+
+{
+  "mainCategory": "CRM",
+  "subCategory": "Müşteri şikayeti",
+  "priority": "High"
+}
+
+### Dashboard istatistikleri
+GET {{host}}/api/dashboard/stats

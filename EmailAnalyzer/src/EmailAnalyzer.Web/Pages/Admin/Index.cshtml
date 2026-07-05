@@ -1,0 +1,103 @@
+@page "/admin"
+@model EmailAnalyzer.Web.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = "Panel";
+}
+
+<section class="section">
+    <div class="section-header">
+        <h1>Panel</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4 col-md-6 col-sm-12">
+            <div class="card card-statistic-1">
+                <div class="card-icon bg-primary"><i data-feather="inbox"></i></div>
+                <div class="card-wrap">
+                    <div class="card-header"><h4>Toplam Mail</h4></div>
+                    <div class="card-body">@Model.TotalCount</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 col-sm-12">
+            <div class="card card-statistic-1">
+                <div class="card-icon bg-danger"><i data-feather="alert-triangle"></i></div>
+                <div class="card-wrap">
+                    <div class="card-header"><h4>Kritik</h4></div>
+                    <div class="card-body">@Model.CriticalCount</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 col-sm-12">
+            <div class="card card-statistic-1">
+                <div class="card-icon bg-warning"><i data-feather="eye"></i></div>
+                <div class="card-wrap">
+                    <div class="card-header"><h4>İnceleme Bekleyen</h4></div>
+                    <div class="card-body">@Model.ReviewCount</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 col-md-12">
+            <div class="card">
+                <div class="card-header"><h4>Kategori Dağılımı</h4></div>
+                <div class="card-body"><div style="height:280px"><canvas id="categoryChart"></canvas></div></div>
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-12">
+            <div class="card">
+                <div class="card-header"><h4>Öncelik Dağılımı</h4></div>
+                <div class="card-body"><div style="height:280px"><canvas id="priorityChart"></canvas></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h4>Son 30 Gün Mail Hacmi</h4></div>
+                <div class="card-body"><div style="height:250px"><canvas id="volumeChart"></canvas></div></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+<script>
+    (async function () {
+        const res = await fetch('/api/dashboard/stats');
+        const data = await res.json();
+
+        const palette = ['#6777ef', '#63ed7a', '#ffa426', '#fc544b', '#3abaf4', '#cdd3d8', '#7c5cbf', '#191d21'];
+
+        new Chart(document.getElementById('categoryChart'), {
+            type: 'pie',
+            data: {
+                labels: data.byCategory.map(x => x.display),
+                datasets: [{ data: data.byCategory.map(x => x.count), backgroundColor: palette }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, animation: { duration: 0 } }
+        });
+
+        new Chart(document.getElementById('priorityChart'), {
+            type: 'bar',
+            data: {
+                labels: data.byPriority.map(x => x.display),
+                datasets: [{ label: 'Adet', data: data.byPriority.map(x => x.count), backgroundColor: '#6777ef' }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, animation: { duration: 0 }, scales: { yAxes: [{ ticks: { beginAtZero: true } }] } }
+        });
+
+        new Chart(document.getElementById('volumeChart'), {
+            type: 'line',
+            data: {
+                labels: data.last30Days.map(x => new Date(x.date).toLocaleDateString('tr-TR')),
+                datasets: [{ label: 'Gelen Mail', data: data.last30Days.map(x => x.count), borderColor: '#6777ef', backgroundColor: 'rgba(103,119,239,0.1)', fill: true }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, animation: { duration: 0 }, scales: { yAxes: [{ ticks: { beginAtZero: true } }] } }
+        });
+    })();
+</script>
+}

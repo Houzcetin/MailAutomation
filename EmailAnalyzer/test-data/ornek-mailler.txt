@@ -1,0 +1,94 @@
+### Bu dosyaya AI ile ürettiğin test maillerini yapıştır.
+### Her mail "---" satırıyla ayrılır. Aşağıdaki 2 örnek formatı gösteriyor; kendi maillerinle değiştir/çoğalt.
+### Alan adları: GÖNDEREN ADI / GÖNDEREN E-POSTA / KONU / İÇERİK (İÇERİK sonraki --- 'e kadar çok satır olabilir)
+---
+GÖNDEREN ADI: Mehmet Demir
+GÖNDEREN E-POSTA: mehmet.demir@abclojistik.com
+KONU: E-fatura kesemiyorum, cari hesap bakiyesi hatalı görünüyor
+İÇERİK:
+Merhaba, bugün müşterime e-fatura keserken "cari hesap bakiyesi güncellenemedi" hatası alıyorum ve fatura GİB'e gönderilemiyor. Ay sonu kapanışı için bu faturaların bugün kesilmesi şart. Ayrıca dün yapılan 2 tahsilat cari ekstrede görünmüyor, borç-alacak dengesi tutmuyor. Lütfen acilen dönebilir misiniz?
+---
+GÖNDEREN ADI: Trendyol Kampanya
+GÖNDEREN E-POSTA: kampanya@ty.trendyol.com
+KONU: 🔥 Sana Özel %50 İndirim Fırsatı Son 24 Saat!
+İÇERİK:
+Merhaba! Sana özel hazırladığımız sepette geçerli %50 indirim kuponunu kaçırma. Binlerce üründe geçerli, sadece bugüne özel. Hemen alışverişe başla!
+---
+GÖNDEREN ADI: Ebru Şahin
+GÖNDEREN E-POSTA: ebru.sahin@kuzeylojistik.com
+KONU: İşe giriş bildirimi ve özlük dosyası ekranı hakkında
+İÇERİK:
+Merhaba, yeni başlayan personeller için özlük bilgilerini sisteme giriyoruz ancak bazı alanların zorunlu olup olmadığından emin olamadık. Özellikle SGK işe giriş tarihi, deneme süresi ve departman bilgisi bordroya otomatik yansıyor mu? Ayrıca izin hakkı hesaplaması personel başlangıç tarihine göre mi oluşuyor? Bu konuda kısa bir yönlendirme veya doküman paylaşabilir misiniz?
+---
+GÖNDEREN ADI: Finans Departmanı
+GÖNDEREN E-POSTA: finans@merkezgida.com.tr
+KONU: Ay sonu kapanışı yapılamıyor - muhasebe fişleri kilitlendi
+İÇERİK:
+Merhaba, ay sonu kapanışı sırasında sistem “dönem hareketleri kontrol ediliyor” ekranında kalıyor. Bazı muhasebe fişleri onaylı görünmesine rağmen rapora dahil olmuyor. Bütçe gerçekleşen raporunda da gider kalemleri eksik geliyor. Bugün mali müşavire dosya göndermemiz gerekiyor ve süreç tamamen durmuş durumda. Acil destek rica ediyoruz.
+---
+GÖNDEREN ADI: Caner Demir
+GÖNDEREN E-POSTA: caner.demir@atlasmakina.com
+KONU: Üretim planlama ekranında iş emirleri yanlış sıraya düşüyor
+İÇERİK:
+Merhaba, üretim planlama modülünde açtığımız iş emirleri termin tarihine göre sıralanmıyor. Önceliği yüksek olan siparişler listenin altına düşüyor ve planlama ekibi manuel düzeltmek zorunda kalıyor. Ayrıca satın alma talepleri otomatik oluşurken bazı yarı mamuller eksik geliyor. Bu durum hem üretim hattını hem de tedarik sürecini etkiliyor. Kontrol sağlayabilir misiniz?
+---
+GÖNDEREN ADI: Yasemin Öztürk
+GÖNDEREN E-POSTA: yasemin.ozturk@beyazkuleinsaat.com
+KONU: GİB gönderiminde hata - Mali mühür sertifikası okunamıyor
+İÇERİK:
+Merhaba, e-fatura gönderimi sırasında “mali mühür sertifikası doğrulanamadı” hatası alıyoruz. Aynı bilgisayardan geçen hafta sorunsuz gönderim yapılmıştı. Java ve driver tarafında bir değişiklik yapmadık ama GİB portalına manuel girişte de zaman zaman uyarı çıkıyor. Bekleyen 47 adet fatura var ve bazıları bugün son gün. Lütfen uzaktan bağlantı ile kontrol eder misiniz?
+---
+GÖNDEREN ADI: Ozan Ergin
+GÖNDEREN E-POSTA: ozan.ergin@parlakotomotiv.com
+KONU: Müşteri şikayeti CRM’e düşmedi
+İÇERİK:
+Merhaba, web formundan gelen bir müşteri şikayeti CRM sisteminde ticket olarak oluşmamış. Müşteri dün tekrar aradı ve “hiç dönüş yapılmadı” diye ciddi şekilde şikayet etti. Satış sonrası ekibi formun mail olarak geldiğini söylüyor ama CRM pipeline içinde kayıt yok. Bu kayıp kayıt yüzünden müşteriyi kaybetme riski oluştu. Form entegrasyonu ve otomatik ticket oluşturma sürecini kontrol eder misiniz?
+---
+GÖNDEREN ADI: Ayhan Polat Hukuk Bürosu
+GÖNDEREN E-POSTA: ayhan.polat@polathukuk.com
+KONU: Ödeme anlaşmazlığı ve sözleşme ihlali bildirimi
+İÇERİK:
+Merhaba, müvekkilimiz adına yazıyoruz. Firmanızın destek hizmeti kapsamında taahhüt ettiği müdahale sürelerine uyulmadığı ve buna rağmen bakım bedeli faturalandırıldığı tarafımıza iletilmiştir. Ayrıca ilgili faturanın e-arşiv olarak kesildiği ancak hizmet detayının hatalı olduğu belirtilmektedir. Bu konuda yazılı açıklama yapılmazsa hukuki süreç başlatılacaktır. Konunun insan incelemesine alınmasını ve yetkili bir kişi tarafından dönüş yapılmasını talep ediyoruz.
+---
+GÖNDEREN ADI: İdil Yüce
+GÖNDEREN E-POSTA: idil.yuce@verimdanismanlik.com
+KONU: Kullanıcı eğitimi ve canlı ortam geçiş desteği
+İÇERİK:
+Merhaba, ERP kurulumumuz tamamlanmak üzere ancak kullanıcıların stok, satın alma ve e-fatura süreçlerinde eğitime ihtiyacı var. Canlı ortama geçişten önce iki günlük online training planlayabilir miyiz? Özellikle muhasebe ekibi e-defter ve dönem kapanışı adımlarını uygulamalı görmek istiyor. Ayrıca eğitim sonrası kısa bir kullanım dokümanı paylaşmanız mümkün mü?
+---
+GÖNDEREN ADI: Alper Tunca
+GÖNDEREN E-POSTA: alper.tunca@runayazilim.com
+KONU: Teklif kayıtları satış fırsatına dönmüyor
+İÇERİK:
+Merhaba, CRM’de teklif oluşturuyoruz fakat teklif onaylandıktan sonra otomatik olarak satış fırsatına dönüşmüyor. Daha önce bu workflow çalışıyordu. Pipeline ekranında teklif “approved” görünüyor ama opportunity kaydı oluşmuyor. Satış ekibi raporlarında bu teklifler kayıp göründüğü için aylık hedef takibi bozuldu. Hem CRM workflow hem de satış raporu tarafının kontrol edilmesini rica ederiz.
+---
+GÖNDEREN ADI: Zeynep Arslan
+GÖNDEREN E-POSTA: zeynep.arslan@limonkozmetik.com
+KONU: Bordro hesaplamasında fazla mesai yanlış
+İÇERİK:
+Merhaba, Haziran bordrosunda bazı çalışanların fazla mesai tutarı beklediğimizden düşük hesaplanmış. Puantaj ekranında saatler doğru görünüyor ama bordro çıktısında oran farklı uygulanmış gibi. Özellikle resmi tatil çalışması olan personellerde sorun var. Çalışanlardan itiraz gelmeye başladı, bu nedenle hızlı kontrol edilmesini rica ederiz. Gerekirse örnek personel numaralarını paylaşabiliriz.
+---
+GÖNDEREN ADI: Deniz Korkmaz
+GÖNDEREN E-POSTA: deniz.korkmaz@gmail.com
+KONU: Sistem açılmıyor
+İÇERİK:
+Merhaba, sistem açılmıyor. Ne ERP’ye ne fatura ekranına girebiliyoruz. Acil bakabilir misiniz? Hangi modülde sorun olduğunu bilmiyorum, herkes beni arıyor.
+---
+GÖNDEREN ADI: Global Leads Agency
+GÖNDEREN E-POSTA: campaign@globalleads-agency.net
+KONU: Şirketiniz için 10.000 yeni B2B müşteri datası
+İÇERİK:
+Merhaba, Türkiye genelinde güncel firma yetkilisi veritabanımız ile satışlarınızı artırabilirsiniz. ERP, yazılım, finans ve üretim sektörlerine özel karar verici listeleri sunuyoruz. İlk 500 kayıt ücretsiz demo olarak gönderilebilir. Kampanyamız sadece bu hafta geçerlidir. Detaylı bilgi için bu maile dönüş yapmanız yeterlidir.
+---
+GÖNDEREN ADI: Vega Promosyon
+GÖNDEREN E-POSTA: satis@vegapromosyon.com
+KONU: Logolu ajanda ve kalem kampanyası
+İÇERİK:
+Merhaba, yeni yıl öncesi kurumsal müşterileriniz ve çalışanlarınız için logolu ajanda, kalem, kupa ve bez çanta üretimi yapıyoruz. Minimum sipariş adedi 250’dir. Tasarım desteği ücretsizdir. Yazılım, muhasebe veya ERP süreçlerinizle ilgili değildir ancak satın alma departmanınız ilgilenebilir. Katalog göndermemizi ister misiniz?
+---
+GÖNDEREN ADI: Murat Ekinci
+GÖNDEREN E-POSTA: murat.ekinci@tempoelektronik.com
+KONU: e-defter berat yükleme sonrası rapor tutmuyor
+İÇERİK:
+Merhaba, e-defter beratlarını yükledikten sonra mizan raporunda bazı hesapların borç-alacak toplamı değişmiş görünüyor. Defter dosyası GİB tarafında başarılı görünüyor ama sistem içindeki mali raporda farklı sonuç alıyoruz. Muhasebe ekibi bunun veri kaybı olabileceğinden endişeli. Ay kapanışı tamamlandıktan sonra böyle bir fark oluşması bizi zor durumda bıraktı. Lütfen hem e-defter sürecini hem de muhasebe raporlarını birlikte inceleyin.
+---

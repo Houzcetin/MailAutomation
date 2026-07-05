@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EmailAnalyzer.Domain/EmailAnalyzer.Domain.csproj" />
+    <Project Path="src/EmailAnalyzer.Infrastructure/EmailAnalyzer.Infrastructure.csproj" />
+    <Project Path="src/EmailAnalyzer.Web/EmailAnalyzer.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EmailAnalyzer.Tests/EmailAnalyzer.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,64 @@
+@{
+    var otika = "/otika-bootstrap-admin-template/assets";
+    var currentPath = ViewContext.HttpContext.Request.Path.Value ?? string.Empty;
+    bool IsActive(string prefix) => currentPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
+    <title>@ViewData["Title"] - Mail Analiz Paneli</title>
+    <link rel="stylesheet" href="@otika/css/app.min.css">
+    <link rel="stylesheet" href="@otika/css/style.css">
+    <link rel="stylesheet" href="@otika/css/components.css">
+    <link rel="stylesheet" href="@otika/css/custom.css">
+</head>
+<body>
+    <div id="app">
+        <div class="main-wrapper main-wrapper-1">
+            <div class="navbar-bg"></div>
+            <nav class="navbar navbar-expand-lg main-navbar sticky">
+                <div class="form-inline mr-auto">
+                    <ul class="navbar-nav mr-3">
+                        <li><a href="#" data-toggle="sidebar" class="nav-link nav-link-lg collapse-btn"><i data-feather="align-justify"></i></a></li>
+                    </ul>
+                    <h5 class="mb-0 font-weight-bold">Mail Analiz Sistemi</h5>
+                </div>
+            </nav>
+
+            <div class="main-sidebar sidebar-style-2">
+                <aside id="sidebar-wrapper">
+                    <div class="sidebar-brand">
+                        <a href="/admin"><span class="logo-name">Mail Analiz</span></a>
+                    </div>
+                    <ul class="sidebar-menu">
+                        <li class="menu-header">Yönetim</li>
+                        <li class="@(currentPath.Equals("/admin", StringComparison.OrdinalIgnoreCase) ? "dropdown active" : "dropdown")">
+                            <a href="/admin" class="nav-link"><i data-feather="pie-chart"></i><span>Panel</span></a>
+                        </li>
+                        <li class="@(IsActive("/admin/emails") ? "dropdown active" : "dropdown")">
+                            <a href="/admin/emails" class="nav-link"><i data-feather="mail"></i><span>Mailler</span></a>
+                        </li>
+                    </ul>
+                </aside>
+            </div>
+
+            <div class="main-content">
+                @RenderBody()
+            </div>
+
+            <footer class="main-footer">
+                <div class="footer-left">Mail Analiz Paneli</div>
+                <div class="footer-right"></div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="@otika/js/app.min.js"></script>
+    <script src="@otika/bundles/chartjs/chart.min.js"></script>
+    <script src="@otika/js/scripts.js"></script>
+    <script src="@otika/js/custom.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

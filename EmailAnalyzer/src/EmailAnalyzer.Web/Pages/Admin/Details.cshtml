@@ -1,0 +1,93 @@
+@page "/admin/emails/{id:int}"
+@model EmailAnalyzer.Web.Pages.Admin.DetailsModel
+@{
+    ViewData["Title"] = "Mail Detayı";
+    var e = Model.Email;
+}
+
+<section class="section">
+    <div class="section-header">
+        <h1>Mail Detayı</h1>
+        <div class="section-header-back">
+            <a href="/admin/emails" class="btn btn-icon"><i data-feather="arrow-left"></i> Listeye Dön</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header"><h4>@e.Subject</h4></div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Gönderen:</strong> @(string.IsNullOrWhiteSpace(e.SenderName) ? "" : e.SenderName + " ") &lt;@e.SenderEmail&gt;</p>
+                    <p class="mb-1"><strong>Tarih:</strong> @e.ReceivedDate.ToString("dd.MM.yyyy HH:mm")</p>
+                    <p class="mb-3"><strong>Özet:</strong> @e.Summary</p>
+                    <hr />
+                    <h6>İçerik</h6>
+                    <div style="white-space:pre-wrap">@e.Body</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h4>AI Ham Yanıtı</h4></div>
+                <div class="card-body">
+                    <pre style="white-space:pre-wrap;font-size:0.85rem">@e.AiRawResponse</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header"><h4>Analiz</h4></div>
+                <div class="card-body">
+                    <p><strong>Kategori:</strong> @e.MainCategoryDisplay</p>
+                    <p><strong>Alt Konu:</strong> @e.SubCategory</p>
+                    <p><strong>Öncelik:</strong> <span class="badge @DisplayNames.BadgeClass(e.Priority)">@e.PriorityDisplay</span></p>
+                    <p><strong>Duygu:</strong> @e.SentimentDisplay</p>
+                    <p><strong>Güven Skoru:</strong> @e.AiConfidenceScore.ToString("0.00")</p>
+                    <p>
+                        <strong>Durum:</strong>
+                        @if (e.RequiresHumanReview)
+                        {
+                            <span class="badge badge-warning">İnceleme Bekliyor</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-success">İncelendi</span>
+                        }
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h4>Düzelt & İncele</h4></div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="Review" asp-route-id="@e.Id">
+                        <div class="form-group">
+                            <label>Kategori</label>
+                            <select name="ReviewMainCategory" class="form-control">
+                                @foreach (var c in Enum.GetValues<MainCategory>())
+                                {
+                                    <option value="@c" selected="@(Model.ReviewMainCategory == c)">@DisplayNames.For(c)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Alt Konu</label>
+                            <input type="text" name="ReviewSubCategory" value="@Model.ReviewSubCategory" class="form-control" />
+                        </div>
+                        <div class="form-group">
+                            <label>Öncelik</label>
+                            <select name="ReviewPriority" class="form-control">
+                                @foreach (var p in Enum.GetValues<Priority>())
+                                {
+                                    <option value="@p" selected="@(Model.ReviewPriority == p)">@DisplayNames.For(p)</option>
+                                }
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">İncelendi Olarak Kaydet</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
