@@ -70,58 +70,131 @@ public class EmailPollingService : BackgroundService
         var analysisService = scope.ServiceProvider.GetRequiredService<IEmailAnalysisService>();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        _logger.LogInformation("Polling mailbox {Email} for unseen mail...", _gmailOptions.Email);
+        // Load (or create) this folder's watermark so only mail newer than the last processed
+        // UID is fetched. On the very first run there is no state → afterUid is null and the
+        // fetch service baselines on the newest few messages instead of the whole backlog.
+        var state = await dbContext.MailboxStates
+            .FirstOrDefaultAsync(s => s.Folder == _gmailOptions.Folder, cancellationToken);
 
-        var emails = await fetchService.FetchUnseenAsync(cancellationToken);
-        if (emails.Count == 0)
+        uint? afterUid = state?.LastProcessedUid;
+
+        _logger.LogInformation(
+            "Polling mailbox {Email}, folder {Folder} (afterUid={AfterUid})...",
+            _gmailOptions.Email, _gmailOptions.Folder, afterUid);
+
+        var fetch = await fetchService.FetchAsync(afterUid, cancellationToken);
+
+        // A changed UIDVALIDITY means the server's UID space was reset — our watermark is stale
+        // and must be re-baselined. Discard this cycle's mail (it was fetched against the old
+        // watermark) and store the new UIDVALIDITY + highest UID so next cycle starts clean.
+        if (state is not null && state.UidValidity != fetch.UidValidity)
         {
-            _logger.LogInformation("No unseen mail this cycle.");
+            _logger.LogWarning(
+                "UIDVALIDITY changed for {Folder} ({Old} → {New}). Re-baselining watermark.",
+                _gmailOptions.Folder, state.UidValidity, fetch.UidValidity);
+            state.UidValidity = fetch.UidValidity;
+            state.LastProcessedUid = fetch.HighestUid;
+            await dbContext.SaveChangesAsync(cancellationToken);
             return;
         }
 
-        _logger.LogInformation("Fetched {Count} unseen email(s).", emails.Count);
+        if (fetch.Emails.Count == 0)
+        {
+            _logger.LogInformation("No new mail this cycle.");
+            // Still persist a baseline row on first run so we don't reprocess the backlog next time.
+            await UpsertWatermarkAsync(dbContext, state, fetch.UidValidity, fetch.HighestUid, cancellationToken);
+            return;
+        }
 
-        foreach (var email in emails)
+        _logger.LogInformation("Fetched {Count} new email(s).", fetch.Emails.Count);
+
+        uint highestProcessedUid = afterUid ?? 0;
+
+        foreach (var email in fetch.Emails)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             try
             {
-                // Idempotency: never process the same Message-Id twice.
+                // Idempotency: never process the same Message-Id twice (guards against a UID range
+                // that overlaps an already-stored mail, e.g. after a re-baseline).
                 var alreadyExists = await dbContext.EmailMessages
                     .AnyAsync(e => e.MessageId == email.MessageId, cancellationToken);
 
-                if (alreadyExists)
+                if (!alreadyExists)
+                {
+                    var result = await analysisService.AnalyzeAsync(
+                        email.Subject, email.SenderEmail, email.SenderName,
+                        email.ReceivedDate, email.Body, cancellationToken);
+
+                    var entity = EmailMessage.FromAnalysis(
+                        email.MessageId, email.SenderEmail, email.SenderName,
+                        email.Subject, email.Body, email.ReceivedDate, result);
+
+                    dbContext.EmailMessages.Add(entity);
+                    await dbContext.SaveChangesAsync(cancellationToken);
+
+                    _logger.LogInformation(
+                        "Processed email UID {Uid} {MessageId} from {Sender} → {Category}/{Priority}.",
+                        email.Uid, email.MessageId, email.SenderEmail, result.MainCategory, result.Priority);
+                }
+                else
                 {
                     _logger.LogDebug("Message {MessageId} already processed, skipping.", email.MessageId);
-                    await fetchService.MarkAsSeenAsync(email.MessageId, cancellationToken);
-                    continue;
                 }
 
-                var result = await analysisService.AnalyzeAsync(
-                    email.Subject, email.SenderEmail, email.SenderName,
-                    email.ReceivedDate, email.Body, cancellationToken);
-
-                var entity = EmailMessage.FromAnalysis(
-                    email.MessageId, email.SenderEmail, email.SenderName,
-                    email.Subject, email.Body, email.ReceivedDate, result);
-
-                dbContext.EmailMessages.Add(entity);
-                await dbContext.SaveChangesAsync(cancellationToken);
-
-                await fetchService.MarkAsSeenAsync(email.MessageId, cancellationToken);
-
-                _logger.LogInformation(
-                    "Processed email {MessageId} from {Sender} → {Category}/{Priority}.",
-                    email.MessageId, email.SenderEmail, result.MainCategory, result.Priority);
+                // Advance the watermark only for mail we successfully handled, so a mid-batch
+                // failure leaves the rest to be retried next cycle rather than being skipped.
+                if (email.Uid > highestProcessedUid)
+                {
+                    highestProcessedUid = email.Uid;
+                }
             }
             catch (Exception ex)
             {
-                // One bad mail must not stop the rest of the batch.
+                // One bad mail must not stop the rest of the batch. Stop advancing the watermark
+                // here so this UID is retried next cycle.
                 _logger.LogError(ex,
-                    "Failed to process email {MessageId} from {Sender}.",
-                    email.MessageId, email.SenderEmail);
+                    "Failed to process email UID {Uid} {MessageId} from {Sender}.",
+                    email.Uid, email.MessageId, email.SenderEmail);
+                break;
             }
         }
+
+        await UpsertWatermarkAsync(dbContext, state, fetch.UidValidity, highestProcessedUid, cancellationToken);
+    }
+
+    /// <summary>Creates or updates the folder's watermark row.</summary>
+    private async Task UpsertWatermarkAsync(
+        AppDbContext dbContext,
+        MailboxState? state,
+        uint uidValidity,
+        uint lastProcessedUid,
+        CancellationToken cancellationToken)
+    {
+        if (state is null)
+        {
+            state = new MailboxState
+            {
+                Folder = _gmailOptions.Folder,
+                UidValidity = uidValidity,
+                LastProcessedUid = lastProcessedUid
+            };
+            dbContext.MailboxStates.Add(state);
+        }
+        else if (lastProcessedUid > state.LastProcessedUid || state.UidValidity != uidValidity)
+        {
+            state.UidValidity = uidValidity;
+            state.LastProcessedUid = lastProcessedUid;
+        }
+        else
+        {
+            return; // nothing changed
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        _logger.LogDebug(
+            "Watermark for {Folder} → UID {Uid} (UIDVALIDITY {UidValidity}).",
+            _gmailOptions.Folder, lastProcessedUid, uidValidity);
     }
 }

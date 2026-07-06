@@ -2,12 +2,19 @@ using EmailAnalyzer.Domain.Dtos;
 
 namespace EmailAnalyzer.Domain.Services;
 
-/// <summary>Fetches unseen emails from the mailbox and marks them as read.</summary>
+/// <summary>Fetches emails from the mailbox using a UID watermark.</summary>
 public interface IEmailFetchService
 {
-    /// <summary>Reads all UNSEEN messages from the configured folder as plain-text DTOs.</summary>
-    Task<IReadOnlyList<FetchedEmail>> FetchUnseenAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>Marks a message as seen (\Seen flag) so it is not fetched again.</summary>
-    Task MarkAsSeenAsync(string messageId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Reads messages from the configured folder as plain-text DTOs.
+    /// <para>
+    /// When <paramref name="afterUid"/> is supplied, only messages whose UID is greater than it
+    /// are returned (nothing is missed, even mail that arrived while the app was down). When it
+    /// is <c>null</c> (first run for this folder), the newest <c>MaxEmailsPerCycle</c> messages
+    /// are returned so the large historical backlog is skipped.
+    /// </para>
+    /// The returned <see cref="FetchResult.UidValidity"/> lets the caller detect a UID-space
+    /// reset (changed UIDVALIDITY) and re-baseline its watermark.
+    /// </summary>
+    Task<FetchResult> FetchAsync(uint? afterUid, CancellationToken cancellationToken = default);
 }

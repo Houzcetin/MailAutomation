@@ -13,6 +13,8 @@ public class AppDbContext : DbContext
 
     public DbSet<EmailReply> EmailReplies => Set<EmailReply>();
 
+    public DbSet<MailboxState> MailboxStates => Set<MailboxState>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
