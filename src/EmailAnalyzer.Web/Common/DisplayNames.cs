@@ -37,6 +37,12 @@ public static class DisplayNames
         [Sentiment.Urgent] = "Acil"
     };
 
+    private static readonly Dictionary<ReplyStatus, string> ReplyStatuses = new()
+    {
+        [ReplyStatus.Draft] = "Taslak",
+        [ReplyStatus.Sent] = "Gönderildi"
+    };
+
     /// <summary>Bootstrap badge color class for a priority (spec section 9).</summary>
     public static string BadgeClass(Priority value) => value switch
     {
@@ -55,4 +61,7 @@ public static class DisplayNames
 
     public static string For(Sentiment value) =>
         Sentiments.TryGetValue(value, out var label) ? label : value.ToString();
+
+    public static string For(ReplyStatus value) =>
+        ReplyStatuses.TryGetValue(value, out var label) ? label : value.ToString();
 }

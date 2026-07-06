@@ -49,6 +49,9 @@ public class EmailDetailDto
 
     public DateTime CreatedDate { get; set; }
 
+    /// <summary>Reply draft/sent state; null until a draft is saved. Requires Include(e => e.Reply).</summary>
+    public EmailReplyDto? Reply { get; set; }
+
     public static EmailDetailDto FromEntity(EmailMessage e) => new()
     {
         Id = e.Id,
@@ -71,6 +74,7 @@ public class EmailDetailDto
         ProcessedDate = e.ProcessedDate,
         RequiresHumanReview = e.RequiresHumanReview,
         AiRawResponse = e.AiRawResponse,
-        CreatedDate = e.CreatedDate
+        CreatedDate = e.CreatedDate,
+        Reply = e.Reply is null ? null : EmailReplyDto.FromEntity(e.Reply)
     };
 }

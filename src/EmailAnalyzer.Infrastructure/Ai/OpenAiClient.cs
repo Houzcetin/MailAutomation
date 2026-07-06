@@ -40,16 +40,28 @@ public class OpenAiClient
     /// (choices[0].message.content). Throws on non-retryable errors or after retries
     /// are exhausted.
     /// </summary>
+    public Task<string> CompleteJsonAsync(
+        string systemPrompt,
+        string userPrompt,
+        CancellationToken cancellationToken)
+        => CompleteJsonAsync(systemPrompt, userPrompt, temperature: 0, _options.MaxTokens, cancellationToken);
+
+    /// <summary>
+    /// Variant with explicit sampling parameters. Classification uses temperature 0;
+    /// reply drafting uses a higher temperature for natural prose.
+    /// </summary>
     public async Task<string> CompleteJsonAsync(
         string systemPrompt,
         string userPrompt,
+        double temperature,
+        int maxTokens,
         CancellationToken cancellationToken)
     {
         var payload = new
         {
             model = _options.Model,
-            temperature = 0,
-            max_tokens = _options.MaxTokens,
+            temperature,
+            max_tokens = maxTokens,
             response_format = new { type = "json_object" },
             messages = new object[]
             {
@@ -60,35 +72,57 @@ public class OpenAiClient
 
         for (var attempt = 0; ; attempt++)
         {
-            using var response = await _httpClient.PostAsJsonAsync(
-                "chat/completions", payload, cancellationToken);
+            HttpStatusCode statusCode;
+            string errorBody;
 
-            if (response.IsSuccessStatusCode)
+            try
             {
-                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-                using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-                return doc.RootElement
-                    .GetProperty("choices")[0]
-                    .GetProperty("message")
-                    .GetProperty("content")
-                    .GetString() ?? string.Empty;
+                using var response = await _httpClient.PostAsJsonAsync(
+                    "chat/completions", payload, cancellationToken);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                    using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+                    return doc.RootElement
+                        .GetProperty("choices")[0]
+                        .GetProperty("message")
+                        .GetProperty("content")
+                        .GetString() ?? string.Empty;
+                }
+
+                var isTransient = response.StatusCode == HttpStatusCode.TooManyRequests ||
+                                  (int)response.StatusCode >= 500;
+
+                if (isTransient && attempt < RetryDelays.Length)
+                {
+                    var retryDelay = RetryDelays[attempt];
+                    _logger.LogWarning(
+                        "OpenAI request transient failure {StatusCode}, retrying in {Delay}s (attempt {Attempt}/{Max}).",
+                        (int)response.StatusCode, retryDelay.TotalSeconds, attempt + 1, RetryDelays.Length);
+                    await Task.Delay(retryDelay, cancellationToken);
+                    continue;
+                }
+
+                // Non-retryable status, or retries exhausted: capture and throw below
+                // (outside the try so this throw is not caught as a connection failure).
+                statusCode = response.StatusCode;
+                errorBody = await SafeReadAsync(response, cancellationToken);
+            }
+            catch (HttpRequestException ex) when (attempt < RetryDelays.Length)
+            {
+                // No HTTP response was produced (e.g. DNS resolution / socket failure).
+                // Treat connection-level errors as transient and retry with the same backoff.
+                var retryDelay = RetryDelays[attempt];
+                _logger.LogWarning(
+                    "OpenAI connection failure, retrying in {Delay}s (attempt {Attempt}/{Max}): {Reason}",
+                    retryDelay.TotalSeconds, attempt + 1, RetryDelays.Length, ex.Message);
+                await Task.Delay(retryDelay, cancellationToken);
+                continue;
             }
 
-            var isTransient = response.StatusCode == HttpStatusCode.TooManyRequests ||
-                              (int)response.StatusCode >= 500;
-
-            if (!isTransient || attempt >= RetryDelays.Length)
-            {
-                var body = await SafeReadAsync(response, cancellationToken);
-                throw new HttpRequestException(
-                    $"OpenAI request failed ({(int)response.StatusCode} {response.StatusCode}): {body}");
-            }
-
-            var delay = RetryDelays[attempt];
-            _logger.LogWarning(
-                "OpenAI request transient failure {StatusCode}, retrying in {Delay}s (attempt {Attempt}/{Max}).",
-                (int)response.StatusCode, delay.TotalSeconds, attempt + 1, RetryDelays.Length);
-            await Task.Delay(delay, cancellationToken);
+            throw new HttpRequestException(
+                $"OpenAI request failed ({(int)statusCode} {statusCode}): {errorBody}");
         }
     }
 

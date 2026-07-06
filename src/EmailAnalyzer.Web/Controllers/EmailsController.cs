@@ -13,11 +13,19 @@ namespace EmailAnalyzer.Web.Controllers;
 public class EmailsController : ControllerBase
 {
     private readonly IEmailAnalysisService _analysisService;
+    private readonly IReplyGenerationService _replyGenerationService;
+    private readonly IEmailReplySender _replySender;
     private readonly AppDbContext _dbContext;
 
-    public EmailsController(IEmailAnalysisService analysisService, AppDbContext dbContext)
+    public EmailsController(
+        IEmailAnalysisService analysisService,
+        IReplyGenerationService replyGenerationService,
+        IEmailReplySender replySender,
+        AppDbContext dbContext)
     {
         _analysisService = analysisService;
+        _replyGenerationService = replyGenerationService;
+        _replySender = replySender;
         _dbContext = dbContext;
     }
 
@@ -145,6 +153,7 @@ public class EmailsController : ControllerBase
     {
         var entity = await _dbContext.EmailMessages
             .AsNoTracking()
+            .Include(e => e.Reply)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
         if (entity is null)
@@ -194,4 +203,163 @@ public class EmailsController : ControllerBase
 
         return Ok(EmailDetailDto.FromEntity(entity));
     }
+
+    /// <summary>
+    /// Drafts an AI reply for the email. Stateless: nothing is persisted — the user reviews
+    /// the text in the editor and saves/sends explicitly.
+    /// </summary>
+    [HttpPost("{id:int}/reply/generate")]
+    public async Task<ActionResult<GenerateReplyResponse>> GenerateReply(
+        int id, CancellationToken cancellationToken = default)
+    {
+        var entity = await _dbContext.EmailMessages
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+
+        if (entity is null)
+        {
+            return NotFound();
+        }
+
+        var result = await _replyGenerationService.GenerateReplyAsync(entity, cancellationToken);
+
+        if (!result.Success)
+        {
+            // Detail is already logged by the service; the client gets a generic message.
+            return StatusCode(StatusCodes.Status502BadGateway,
+                new { error = "Yanıt oluşturulamadı. Lütfen tekrar deneyin." });
+        }
+
+        return Ok(new GenerateReplyResponse
+        {
+            ReplyBody = result.ReplyBody,
+            RawResponse = result.RawResponse
+        });
+    }
+
+    /// <summary>Saves (upserts) the reply draft. A sent reply is frozen.</summary>
+    [HttpPut("{id:int}/reply")]
+    public async Task<ActionResult<EmailReplyDto>> SaveReply(
+        int id,
+        [FromBody] SaveReplyRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.ReplyBody))
+        {
+            return BadRequest(new { error = "Yanıt metni boş olamaz." });
+        }
+
+        var entity = await _dbContext.EmailMessages
+            .Include(e => e.Reply)
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+
+        if (entity is null)
+        {
+            return NotFound();
+        }
+
+        if (entity.Reply?.Status == ReplyStatus.Sent)
+        {
+            return Conflict(new { error = "Bu mail zaten yanıtlandı." });
+        }
+
+        var reply = UpsertDraft(entity, request);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return Ok(EmailReplyDto.FromEntity(reply));
+    }
+
+    /// <summary>
+    /// Sends the reply via SMTP. The draft is upserted with the posted body first, so what
+    /// the user saw in the editor is exactly what gets persisted and sent. On SMTP failure
+    /// the draft is kept and the error is stored on it.
+    /// </summary>
+    [HttpPost("{id:int}/reply/send")]
+    public async Task<IActionResult> SendReply(
+        int id,
+        [FromBody] SaveReplyRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.ReplyBody))
+        {
+            return BadRequest(new { error = "Yanıt metni boş olamaz." });
+        }
+
+        var entity = await _dbContext.EmailMessages
+            .Include(e => e.Reply)
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+
+        if (entity is null)
+        {
+            return NotFound();
+        }
+
+        if (entity.Reply?.Status == ReplyStatus.Sent)
+        {
+            return Conflict(new { error = "Bu mail zaten yanıtlandı." });
+        }
+
+        var reply = UpsertDraft(entity, request);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var result = await _replySender.SendReplyAsync(entity, request.ReplyBody, cancellationToken);
+
+        if (!result.Success)
+        {
+            reply.LastSendError = Truncate(result.ErrorMessage ?? "Bilinmeyen hata", 2000);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return StatusCode(StatusCodes.Status502BadGateway,
+                new { error = $"Gönderim başarısız: {result.ErrorMessage}" });
+        }
+
+        reply.Status = ReplyStatus.Sent;
+        reply.SentDate = result.SentDate;
+        reply.SentMessageId = result.SentMessageId;
+        reply.LastSendError = null;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return Ok(new
+        {
+            status = ReplyStatus.Sent,
+            sentDate = result.SentDate,
+            sentTo = entity.SenderEmail
+        });
+    }
+
+    /// <summary>Creates or updates the draft row with the posted editor content.</summary>
+    private EmailReply UpsertDraft(EmailMessage entity, SaveReplyRequest request)
+    {
+        var now = DateTime.UtcNow;
+
+        if (entity.Reply is null)
+        {
+            entity.Reply = new EmailReply
+            {
+                EmailMessageId = entity.Id,
+                Body = request.ReplyBody,
+                Status = ReplyStatus.Draft,
+                IsAiGenerated = request.IsAiGenerated,
+                AiRawResponse = request.AiRawResponse,
+                CreatedDate = now,
+                UpdatedDate = now
+            };
+            _dbContext.EmailReplies.Add(entity.Reply);
+        }
+        else
+        {
+            entity.Reply.Body = request.ReplyBody;
+            entity.Reply.IsAiGenerated = request.IsAiGenerated;
+            if (request.AiRawResponse is not null)
+            {
+                entity.Reply.AiRawResponse = request.AiRawResponse;
+            }
+            entity.Reply.UpdatedDate = now;
+        }
+
+        return entity.Reply;
+    }
+
+    private static string Truncate(string value, int maxChars) =>
+        value.Length <= maxChars ? value : value.Substring(0, maxChars);
 }

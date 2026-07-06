@@ -29,30 +29,48 @@ public class MailKitEmailFetchService : IEmailFetchService
         _logger = logger;
     }
 
-    public async Task<IReadOnlyList<FetchedEmail>> FetchUnseenAsync(
-        CancellationToken cancellationToken = default)
+    public async Task<FetchResult> FetchAsync(
+        uint? afterUid, CancellationToken cancellationToken = default)
     {
         using var client = new ImapClient();
         await ConnectAsync(client, cancellationToken);
 
-        var folder = await OpenFolderAsync(client, FolderAccess.ReadWrite, cancellationToken);
-        _logger.LogDebug("Folder '{Folder}' opened, searching unseen...", _options.Folder);
+        // Read-only: we never set the \Seen flag, so mail stays unread in the user's mailbox.
+        var folder = await OpenFolderAsync(client, FolderAccess.ReadOnly, cancellationToken);
+        var uidValidity = folder.UidValidity;
+        _logger.LogDebug(
+            "Folder '{Folder}' opened. UidValidity={UidValidity}, afterUid={AfterUid}.",
+            _options.Folder, uidValidity, afterUid);
 
-        var uids = await folder.SearchAsync(SearchQuery.NotSeen, cancellationToken);
-        _logger.LogDebug("Found {Count} unseen UID(s).", uids.Count);
-
-        // Only take the newest N to avoid processing a large backlog (and its AI cost) at once.
-        // Unseen UIDs come back ascending, so the newest ones are at the end of the list.
-        var batch = uids
-            .Skip(Math.Max(0, uids.Count - _options.MaxEmailsPerCycle))
-            .ToList();
-
-        if (batch.Count < uids.Count)
+        // Select which UIDs to fetch:
+        //  - First run (afterUid == null): take the newest N so the historical backlog is skipped.
+        //  - Otherwise: everything strictly greater than the watermark — nothing is missed, even
+        //    mail that arrived while the app was down.
+        IList<UniqueId> uids;
+        if (afterUid is { } watermark)
         {
-            _logger.LogInformation(
-                "Processing newest {Batch} of {Total} unseen (MaxEmailsPerCycle).",
-                batch.Count, uids.Count);
+            var range = new UniqueIdRange(new UniqueId(watermark + 1), UniqueId.MaxValue);
+            uids = await folder.SearchAsync(range, SearchQuery.All, cancellationToken);
+            _logger.LogDebug("Found {Count} UID(s) newer than {Watermark}.", uids.Count, watermark);
         }
+        else
+        {
+            var all = await folder.SearchAsync(SearchQuery.All, cancellationToken);
+            uids = all
+                .Skip(Math.Max(0, all.Count - _options.MaxEmailsPerCycle))
+                .ToList();
+            _logger.LogInformation(
+                "First run for '{Folder}': baselining on newest {Batch} of {Total} message(s).",
+                _options.Folder, uids.Count, all.Count);
+        }
+
+        // Cap per cycle so a large gap (e.g. app down for a long time) doesn't fetch everything
+        // and its AI cost at once — the remainder is picked up next cycle as the watermark advances.
+        var highestUidInFolder = uids.Count > 0 ? uids.Max(u => u.Id) : (afterUid ?? 0);
+        var batch = uids
+            .OrderBy(u => u.Id)
+            .Take(_options.MaxEmailsPerCycle)
+            .ToList();
 
         var results = new List<FetchedEmail>(batch.Count);
 
@@ -64,6 +82,7 @@ public class MailKitEmailFetchService : IEmailFetchService
 
             results.Add(new FetchedEmail
             {
+                Uid = uid.Id,
                 MessageId = message.MessageId ?? uid.ToString(),
                 SenderEmail = message.From.Mailboxes.FirstOrDefault()?.Address ?? string.Empty,
                 SenderName = message.From.Mailboxes.FirstOrDefault()?.Name,
@@ -75,30 +94,13 @@ public class MailKitEmailFetchService : IEmailFetchService
         }
 
         await client.DisconnectAsync(true, cancellationToken);
-        return results;
-    }
 
-    public async Task MarkAsSeenAsync(
-        string messageId,
-        CancellationToken cancellationToken = default)
-    {
-        using var client = new ImapClient();
-        await ConnectAsync(client, cancellationToken);
-
-        var folder = await OpenFolderAsync(client, FolderAccess.ReadWrite, cancellationToken);
-
-        // Find the message by its Message-Id header and set the \Seen flag.
-        var uids = await folder.SearchAsync(SearchQuery.HeaderContains("Message-Id", messageId), cancellationToken);
-        if (uids.Count > 0)
+        return new FetchResult
         {
-            await folder.AddFlagsAsync(uids, MessageFlags.Seen, true, cancellationToken);
-        }
-        else
-        {
-            _logger.LogWarning("Could not find message {MessageId} to mark as seen.", messageId);
-        }
-
-        await client.DisconnectAsync(true, cancellationToken);
+            UidValidity = uidValidity,
+            HighestUid = highestUidInFolder,
+            Emails = results
+        };
     }
 
     private async Task ConnectAsync(ImapClient client, CancellationToken cancellationToken)

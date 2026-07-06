@@ -4,6 +4,7 @@ using EmailAnalyzer.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmailAnalyzer.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260705183948_AddEmailReplies")]
+    partial class AddEmailReplies
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -166,33 +169,6 @@ namespace EmailAnalyzer.Infrastructure.Persistence.Migrations
                     b.HasIndex("Status");
 
                     b.ToTable("EmailReplies", (string)null);
-                });
-
-            modelBuilder.Entity("EmailAnalyzer.Domain.Entities.MailboxState", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Folder")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<long>("LastProcessedUid")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("UidValidity")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Folder")
-                        .IsUnique();
-
-                    b.ToTable("MailboxStates", (string)null);
                 });
 
             modelBuilder.Entity("EmailAnalyzer.Domain.Entities.EmailReply", b =>

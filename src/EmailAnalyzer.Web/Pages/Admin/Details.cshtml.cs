@@ -27,6 +27,7 @@ public class DetailsModel : PageModel
     {
         var entity = await _dbContext.EmailMessages
             .AsNoTracking()
+            .Include(e => e.Reply)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
         if (entity is null)
