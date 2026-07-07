@@ -47,12 +47,11 @@ public class EmailAnalysisService : IEmailAnalysisService
 
             var result = AiResponseParser.Parse(raw);
 
-            // Application-side rule: low confidence forces human review even if the
-            // model reported false.
-            if (result.Confidence < _analysisOptions.ConfidenceThreshold)
-            {
-                result.RequiresHumanReview = true;
-            }
+            // Application-side rule: every analysed mail must be reviewed by a human before it
+            // counts as handled, so it always starts as "İnceleme Bekliyor". A reviewer clears
+            // this in the UI. (The AI's own suggestion and the confidence score are still stored
+            // for context, but they never auto-mark a mail as reviewed.)
+            result.RequiresHumanReview = true;
 
             return result;
         }

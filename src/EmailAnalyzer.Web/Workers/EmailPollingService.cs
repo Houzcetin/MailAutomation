@@ -143,6 +143,9 @@ public class EmailPollingService : BackgroundService
                     _logger.LogDebug("Message {MessageId} already processed, skipping.", email.MessageId);
                 }
 
+                // Mark as read in the mailbox now that it's handled.
+                await fetchService.MarkAsSeenAsync(email.Uid, cancellationToken);
+
                 // Advance the watermark only for mail we successfully handled, so a mid-batch
                 // failure leaves the rest to be retried next cycle rather than being skipped.
                 if (email.Uid > highestProcessedUid)

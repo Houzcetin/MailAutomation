@@ -50,7 +50,12 @@ public class MailKitEmailFetchService : IEmailFetchService
         if (afterUid is { } watermark)
         {
             var range = new UniqueIdRange(new UniqueId(watermark + 1), UniqueId.MaxValue);
-            uids = await folder.SearchAsync(range, SearchQuery.All, cancellationToken);
+            var found = await folder.SearchAsync(range, SearchQuery.All, cancellationToken);
+            // IMAP resolves the "*" upper bound to the highest UID in the folder and always
+            // includes it, even when it is below the range's lower bound — so a "watermark+1:*"
+            // search returns the newest message even if nothing is actually newer. Filter it out
+            // to enforce strictly-greater-than semantics.
+            uids = found.Where(u => u.Id > watermark).ToList();
             _logger.LogDebug("Found {Count} UID(s) newer than {Watermark}.", uids.Count, watermark);
         }
         else
@@ -101,6 +106,18 @@ public class MailKitEmailFetchService : IEmailFetchService
             HighestUid = highestUidInFolder,
             Emails = results
         };
+    }
+
+    public async Task MarkAsSeenAsync(uint uid, CancellationToken cancellationToken = default)
+    {
+        using var client = new ImapClient();
+        await ConnectAsync(client, cancellationToken);
+
+        // ReadWrite so we can set the \Seen flag.
+        var folder = await OpenFolderAsync(client, FolderAccess.ReadWrite, cancellationToken);
+        await folder.AddFlagsAsync(new UniqueId(uid), MessageFlags.Seen, silent: true, cancellationToken);
+
+        await client.DisconnectAsync(true, cancellationToken);
     }
 
     private async Task ConnectAsync(ImapClient client, CancellationToken cancellationToken)

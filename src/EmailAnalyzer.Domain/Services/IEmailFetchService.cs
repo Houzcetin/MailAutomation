@@ -17,4 +17,10 @@ public interface IEmailFetchService
     /// reset (changed UIDVALIDITY) and re-baseline its watermark.
     /// </summary>
     Task<FetchResult> FetchAsync(uint? afterUid, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Marks a message as seen (\Seen flag) by its IMAP UID, so it shows as read in the mailbox
+    /// once processed. UID-based so it is exact and avoids a header search.
+    /// </summary>
+    Task MarkAsSeenAsync(uint uid, CancellationToken cancellationToken = default);
 }
